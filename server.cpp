@@ -11,19 +11,15 @@
 #include "User.hpp"
 //#include "User.cpp"
 //#define PORT 8080
+#include <pthread.h>
 using namespace std;
 
 User s;
 
-void * process(void *ptr)
-{
+void * process(void *ptr);
 
-	s.functServ();
-	return 0;
-}
-
-//int main(int argc, char *argv[])
-int main()
+int main(int argc, char *argv[])
+//int main()
 {
 
 //	User s;
@@ -33,8 +29,8 @@ int main()
 	
 	/*bind*/
 
-	int PortNo = 60020;
-	//PortNo = atoi(argv[1]);
+	int PortNo;// = 60020;
+	PortNo = atoi(argv[1]);
 	s.bindSocket(PortNo);
 
 	/*listen*/
@@ -46,13 +42,23 @@ int main()
 	//int newSockFD;
 	//while(newSockFD = s.acceptSocket()){
 
-	s.acceptSocket();
-//	pthread_t t;
-//	pthread_create(&t, NULL, process,  NULL);  //(void *) newSockFD));
+	int newSockFD;
+	newSockFD = s.acceptSocket();
+	pthread_t t;
+	pthread_create(&t, NULL, process, (void *) &newSockFD);  //(void *) newSockFD));
 	//}
-	s.functServ();
+	//s.functServ();
 
 	return 0;
 
 }
+
+void *process(void *ptr)
+{
+	int sock = *(int *) ptr;
+	s.functServ(sock);
+	return 0;
+}
+
+
 
