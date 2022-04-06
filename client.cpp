@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
 	char* name;
 
 	name = argv[1];
-//	PortNo = atoi(argv[2]);
+	PortNo = atoi(argv[2]);
 	/*to create*/
 	c.createSocket(name);
 	/*to connect*/
