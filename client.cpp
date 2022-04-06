@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
 
 	TCPClient c;
 
-	int PortNo = 60001;
+	int PortNo;// = 60001;
 	char* name;
 
 	name = argv[1];
