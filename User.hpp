@@ -27,7 +27,7 @@ class User {
 		void listenSocket(); /*listen socket*/
 		int  acceptSocket(); /*accept socket*/
 
-		void functServ();
+		void functServ(int sock);
 		void login(); /*for login*/
 		
 		void changePassword(); /*for changing password*/
