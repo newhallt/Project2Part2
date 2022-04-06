@@ -91,7 +91,7 @@ void User::send(string msg)
 */
 
 
-void User::functServ()
+void User::functServ(int sock)
 {
 //	char buf[255]; /*for buffer*/
 	int i, choice;
