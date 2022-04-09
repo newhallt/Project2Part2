@@ -43,11 +43,44 @@ void TCPClient::connectSocket(int PortNo)
 
 
 
+
+}
+
+void TCPClient::test(int sock)
+{
+	int i;
+	int choice;
+	char buff[255];
+	char username[255];
+
+	bzero(buff, 255);
+	i = recv(sock, buff, 255, 0);
+	if( i < 0)
+		perror("Error reading");
+	printf("Server - %s\n" , buff);
+
+
+	scanf("%d", &choice);
+	send(sock, &choice, sizeof(int),0);
+
+	if(choice == 1)
+	{
+	       	bzero(buff, 256);
+		i = recv(sock, buff, 255,0);
+		printf("Server - %s\n",buff);
+	
+		scanf("%s", username);
+       		send(sock, username, strlen(username),0);
+	}
+
+	close(sock);
+
+
 }
 
 
 
-void TCPClient::SendClient()
+void TCPClient::SendClient(int sock)
 {
 
 	int i;
@@ -56,50 +89,49 @@ void TCPClient::SendClient()
 	ifstream d("user.txt", ios::in);
 	
 	/*reas choices from server*/
+	//change fom sockFD to sock
 	bzero(buff, 255);
-	i = recv(sockFD, buff, 255, 0);
+	i = recv(sock, buff, 255, 0);
 	if( i < 0)
 		perror("Error reading");
 	printf("Server - %s\n" , buff);
 	/*write choice*/
 	scanf("%d", &choice);
-	send(sockFD, &choice, sizeof(int),0);
+	send(sock, &choice, sizeof(int),0);
 
 	
 if(choice == 1)
 {
 	bzero(buff, 255);
-	i = recv(sockFD, buff, 255,0); /*recieving mssg friom server*/
+	i = recv(sock, buff, 255,0); /*recieving mssg friom server*/
 	if( i < 0)
 		perror("Eror reading");
 	printf("Server - %s\n", buff);
 	scanf("%s", username);
-	send(sockFD, username, strlen(username),0); /*send username to server*/
+	send(sock, username, strlen(username),0); /*send username to server*/
 
 	while(strcmp(username, existUser))
 	{
 		d >> existUser;
 
-		if(strcmp(username, existUser) == 0) /*if user matched*/
+		if(strcmp(username, existUser) == 0) 
 		{
 	
 			bzero(buff, 255);
-			i = recv(sockFD, buff, 255,0);
+			i = recv(sock, buff, 255,0);
 				if(i < 0)
 					perror("Error reading");
 			printf("Server - %s\n", buff);
 			scanf("%s", password);
-			send(sockFD, password, strlen(password),0); /*send password back to server*/
+			send(sock, password, strlen(password),0); //send password back to serve
 		}
 
-		/*else: incorrect username, -> new register
-		{
-			choice = 3;
-		}*/
+		
 		else
 		{
-			goto R;
+			//goto R;
 			//send(sockFD, &choice, sizeof(int), 0);
+			choice = 3;
 		}
 	}
 
@@ -109,14 +141,14 @@ if(choice == 1)
 		{
 			/*if password didn't match, kept asking*/
 			bzero(buff, 255);
-			recv(sockFD, buff, 255,0);
+			recv(sock, buff, 255,0);
 			printf("Server - %s\n", buff);
 			scanf("%s", password);
-			send(sockFD, password, strlen(password),0);
+			send(sock, password, strlen(password),0);
 		}
 
 		/*goto login function*/
-		login();
+		login(sock);
 
 }
 
@@ -125,123 +157,167 @@ if(choice == 1)
 else if(choice == 2)
 {
 	printf("LOG OUT SUCCESSFULLY\n");
-	close(sockFD);
+	close(sock);
+	exit(1);
 }
  
 else if(choice == 3)
 {
-R:
+//R:
 	/*read welcom*/
 	bzero(buff, 255);
-	i = recv(sockFD, buff, 255,0);
+	i = recv(sock, buff, 255,0);
 	if ( i < 0)
 		perror("error...\n");
 	printf("Server - %s\n", buff);
 
 	/*ask for username and password*/
 	bzero(buff, 255);
-	i = recv(sockFD, buff, 255,0);
+	i = recv(sock, buff, 255,0);
 	printf("Server - %s\n", buff);
 
 	/*answer username*/
 	scanf("%s",username);
-	send(sockFD, username, strlen(username),0);
+	send(sock, username, strlen(username),0);
 
 	/*read for password*/
 	bzero(buff, 255);
-	i = recv(sockFD, buff, 255,0);
+	i = recv(sock, buff, 255,0);
 	printf("Server - %s\n", buff);
 	/*answer password*/
 	scanf("%s", password);
-	send(sockFD, password, strlen(password),0);
+	send(sock, password, strlen(password),0);
 
 
 }
 }
 
-void TCPClient::login()
+void TCPClient::checkMssg(int sock)
+{
+
+	int len;
+	char buff[255];
+	while((len = recv(sock, buff, 255,0)) > 0)	{
+		buff[len] = '\0';
+		fputs(buff,stdout);
+		bzero(buff,256);
+	}
+
+
+}
+
+void TCPClient::login(int sock)
 {
 	char buff[255];
 	int choice;
-	
+	int len;
 	/*read choices*/
 	bzero(buff, 255);
-	recv(sockFD, buff, 255,0);
+	recv(sock, buff, 255,0);
+
+	//checkMssg(sock);
+	/*while((len = recv(sock, buff, 255,0)) > 0){
+		buff[len] = '\0';
+		fputs(buff,stdout);
+		bzero(buff,256);
+	}*/
 	printf("server - %s\n", buff);
 	scanf("%d", &choice);
-	send(sockFD, &choice, sizeof(int),0); /*send chose choice back*/
+	send(sock, &choice, sizeof(int),0); /*send chose choice back*/
 
-	if(choice == 1)
-		Subscribe();
-	else if(choice == 2)
-		unSubscribe();
-	else if(choice == 3)
-		communicate();
-	else if(choice == 5)
-		printSub();
-	else if(choice == 8)
-		changePassword();
+	if(choice == 1){
+		Subscribe(sock);
+		login(sock);
+	}
+	else if(choice == 2){
+		unSubscribe(sock);
+		login(sock);
+	}
+	else if(choice == 3){
+		communicate(sock);
+//		login(sock);
+	}
+	else if(choice == 5){
+	//	bzero(buff,255);
+	//	recv(sock, buff, 255,0);
+	    //    printf("Server - %s\n", buff);
+
+//		print2();
+		printSub(sock);
+		//login(sock);
+	}
+	else if(choice == 8){
+		changePassword(sock);
+		login(sock);
+	}
+
+	else if(choice == 0){
+		exit(1);
+	}
 	
 }
 
-void TCPClient::changePassword()
+void TCPClient::changePassword(int sock)
 {
 
 	char temp[255];
 	/*read Enter password:*/ /*asking for old password*/
 	bzero(buff,255);
-	recv(sockFD, buff, 255,0);
+	recv(sock, buff, 255,0);
 	printf("server - %s\n", buff);
 	scanf("%s", password);
-	send(sockFD, password, strlen(password),0); /*sending old password*/
+	send(sock, password, strlen(password),0); /*sending old password*/
 	/*askiing for new password*/
 	bzero(buff,255);
-	recv(sockFD, buff, 255,0);
+	recv(sock, buff, 255,0);
 	printf("server - %s\n", buff);
 	scanf("%s", temp);
-	send(sockFD, temp, strlen(temp),0);
+	send(sock, temp, strlen(temp),0);
 
 
 }
 
-void TCPClient::Subscribe()
+void TCPClient::Subscribe(int sock)
 {
 	
 	int choice;
 	/*read choice*/
 	bzero(buff, 255);
-	recv(sockFD, buff, 255,0);
+	recv(sock, buff, 255,0);
 	printf("server - %s\n", buff);
 	scanf("%d",&choice);
-	send(sockFD, &choice, sizeof(int),0);
+
+	send(sock, &choice, sizeof(int),0);
+
+	//cout << "Clinet choice for location: "<< choice << endl;
 
 	if(choice == 1)
 	{
 		bzero(buff,255);
-		recv(sockFD,buff,255,0);
+		recv(sock,buff,255,0);
 		printf("server - %s\n",buff);
 //		communicate();
 		location.push_back("Pensacola");
-		login();
+		login(sock);
 	}
 	else if(choice == 2)
 	{
 		bzero(buff,255);
-		recv(sockFD, buff, 255,0); /*subscribed to milton*/
+		recv(sock, buff, 255,0); /*subscribed to milton*/
 		printf("server - %s\n", buff);
 //		communicate();
 		location.push_back("Milton");
-		login();
+		login(sock);
 	}
 
 	else if(choice == 3)
 	{
 		bzero(buff, 255);
-		recv(sockFD, buff, 255,0); /*subscribed to  pace*/
+		recv(sock, buff, 255,0); /*subscribed to  pace*/
 		printf("server - %s\n",buff);
 		//communicate();
 		location.push_back("Pace");
-		login();
+		login(sock);
 	}
 
 //	if(choice == 0)
@@ -250,66 +326,95 @@ void TCPClient::Subscribe()
 
 
 }
-void TCPClient::communicate()
+void TCPClient::communicate(int sock)
 {
-	print2();
+	print2(); //print sucscribed location
 	int choice;
+	//:char buff[256];
 	bzero(buff,256);
-	recv(sockFD,buff,255,0); //recieve "Enter: "
+	recv(sock,buff,255,0); //recieve "Enter: "
 	printf("Server - %s\n", buff);
+
 	scanf("%d", &choice);
-	send(sockFD, &choice, sizeof(int), 0);	
+	send(sock, &choice, sizeof(int), 0);	
+
 	string l;
 	l = location.at(choice);
-	LocationChoose(l);
+	LocationChoose(l,sock);
 }
-void TCPClient::LocationChoose(string l)
+void TCPClient::LocationChoose(string l, int sock)
 {
 	if( l == "Pensacola")
-		SendMssg();
+		SendMssg(sock);
 	else if( l == "Milton")
-		SendMssg();
+		SendMssg(sock);
 	else if( l == "Pace")
-		SendMssg();
+		SendMssg(sock);
 }
 
 
-void TCPClient::SendMssg()
+void TCPClient::SendMssg(int sock)
 {
 
-	while(1)
-	{
+//	while(1)
+//	{
 
 		bzero(buff,256);
-		recv(sockFD, buff, 255, 0);
-		fgets(buff,255,stdin);
-		send(sockFD, buff, strlen(buff),0);
+		recv(sock, buff, 255, 0);
+		printf("Server -%s\n",buff); //read Enter Mssg:
 
-		int i = strncmp("Exit",buff, 4);
-		if(i == 0)
-			break;
-	}
-	close(sockFD);
+		int len;
+		char res[256];
+		while(fgets(buff,255,stdin) > 0)
+		{
+	//		strcpy(res, username);
+			strcat(res,":");
+			strcat(res,buff);
+			len = send(sock, buff, strlen(buff),0);
+
+			if(len < 0){
+				perror("message not send");
+				exit(1);
+			}
+			bzero(buff,256);
+			bzero(res,256);
+
+
+//			int i = strncmp("Exit",buff, 4);
+//			if(i == 0)
+//				break;
+		}
+
+		while((len = recv(sock,buff, 255, 0)) > 0){
+			buff[len] = '\0';
+			fputs(buff,stdout);
+			bzero(buff,256);
+		}
+
+
+
+		
+//	close(sockFD);
 
 
 }
 
-void TCPClient::unSubscribe()
+void TCPClient::unSubscribe(int sock)
 {
 
 	/*read choices*/
 	int choice;
 	bzero(buff,255);
-	recv(sockFD, buff, 255,0); /*read choice*/
+	recv(sock, buff, 255,0); /*read choice*/
 	printf("server - %s\n", buff); /*print choice from server*/
 	scanf("%d", &choice);
-	send(sockFD, &choice, sizeof(int),0); /*answer choice*/
+	send(sock, &choice, sizeof(int),0); /*answer choice*/
 
 
 	if(choice == 1)
 	{
 		bzero(buff,255);
-		recv(sockFD, buff, 255,0);
+		recv(sock, buff, 255,0);
 		printf("server - %s", buff);
 
 
@@ -319,7 +424,7 @@ void TCPClient::unSubscribe()
 
 	{
 		bzero(buff,255);
-		recv(sockFD,buff,255,0);
+		recv(sock,buff,255,0);
 		printf("server - %s", buff);
 
 	}
@@ -327,23 +432,18 @@ void TCPClient::unSubscribe()
 	else if(choice == 3)
 	{
 		bzero(buff,255);
-		recv(sockFD, buff, 255,0);
+		recv(sock, buff, 255,0);
 		printf("server - %s", buff);
 
 	}
 
 }
 
-void TCPClient::printSub()
+void TCPClient::printSub(int sock)
 {
-	int s;
-	s = location.size();
-	for(int i = 0; i < s; i++)
-	{
-		cout << i << ": " << location.at(i) << endl;
-	}
 
-	login();	
+	print2();
+	login(sock);	
 }
 
 void TCPClient::print2()

@@ -2,7 +2,7 @@ CXX = g++
 CXXFLAGS = -g -std=c++11 -Wall -Werror=return-type -Werror=uninitialized -pthread
 
 
-server: server.o User.o
+server: server.o User.o Info.o
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 client: client.o TCPClient.o

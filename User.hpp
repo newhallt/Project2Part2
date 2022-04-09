@@ -16,6 +16,8 @@
 #ifndef USER_HPP
 #define USER_HPP
 
+#include "Info.hpp"
+
 using namespace std;
 class User {
 
@@ -28,16 +30,16 @@ class User {
 		int  acceptSocket(); /*accept socket*/
 
 		void functServ(int sock);
-		void login(); /*for login*/
+		void login(int sock, char*name); /*for login*/
 		
-		void changePassword(); /*for changing password*/
-		void Subscribe(); /*for subscribe*/
-		void unSubscribe(); /*for unsubscribe*/
+		void changePassword(int sock); /*for changing password*/
+		void Subscribe(int sock,char*name); /*for subscribe*/
+		void unSubscribe(int sock,char*name); /*for unsubscribe*/
 		void PassChangeFunc(); /*changing password function*/
-		void printSubList(); /*print subscribtiob lists*/
-		void communicate();
-		void SendMssg();
-		void LocationChoose(string l);
+		void printSubList(int sock,char*name); /*print subscribtiob lists*/
+		void communicate(int sock, char*name);
+		void SendMssg(int sock, char*name);
+		void LocationChoose(string l,int sock,char*name);
 		void print2();
 
 		int getSocket();
@@ -58,6 +60,15 @@ class User {
 		int SocketNo;
 		char messages[255];
 		vector<string> location;
+
+		void test(int sock);
+
+//		Info *infoCli = new Infio;
+//		Info infoCli;
+//
+		vector<Info> data;
+
+		void SendToAll(char *mssg, int sock);
 
 	private:
 		int sockFD;

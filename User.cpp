@@ -90,6 +90,21 @@ void User::send(string msg)
 }
 */
 
+void User::test(int sock)
+{
+
+	int choice;
+//	int sock = *(int *)  ptr;
+	char *mssg;
+	mssg = "Entering choice:\n";
+	write(sock, mssg, strlen(mssg));
+
+	recv(sock,&choice,sizeof(int),0);
+	printf("client's choice is: %d\n",choice);
+
+
+}
+
 
 void User::functServ(int sock)
 {
@@ -97,69 +112,72 @@ void User::functServ(int sock)
 	int i, choice;
 
 	ifstream d("user.txt",ios::in);
-	/*choice
-	 * 1) Log in
-	 * 2) Log out
-	 * 3) Register */
 
 	/*send choice to client*/
-	i = send(newSockFD, "Enter choice:\n1.Log in\n2.Log out\n3.Register\n", strlen("Enter choice:\n1.Log in\n2.Log out\n3.Register\n"), 0);
+	/*change from newSockFD to sock*/
+	i = send(sock, "Enter choice:\n1.Log in\n2.Log out\n3.Register\n", strlen("Enter choice:\n1.Log in\n2.Log out\n3.Register\n"), 0);
 	if(i < 0)
 		perror("Error entering choice");
-	recv(newSockFD, &choice, sizeof(int),0);
+	recv(sock, &choice, sizeof(int),0);
 	printf("Client's choice is: %d\n", choice);
 
 
 	if(choice == 1) /*if the choice is 1*/
 {
-	i = send(newSockFD, "Enter username: ", strlen("Enter username: "),0); /*send to client*/
+	i = send(sock, "Enter username: ", strlen("Enter username: "),0); /*send to client*/
 	if(i < 0)
 		perror("Error entering username");
 	bzero(username, 255);
-	recv(newSockFD, username, 255,0); /*read username from client*/
+	recv(sock, username, 255,0); /*read username from client*/
 	printf("username: %s\n", username);
 
+		
 
 	/*find if this user is exits in user.txt*/
 	while(strcmp(username, existUser)){
 		d >> existUser;
 		if(strcmp(username, existUser) == 0)
 		{
-			i = send(newSockFD, "Enter password: ", strlen("Enter password: "),0);
+			i = send(sock, "Enter password: ", strlen("Enter password: "),0);
 			if(i < 0)
 				perror("Error entering password");
 	
 			bzero(password, 255);	
-			recv(newSockFD, password, 255,0); /*recieve password from client*/
+			recv(sock, password, 255,0); //recieve password from client
 		}
 
 		else
 		{
-			//choice = 3;
+			choice = 3;
 		//	recv(newSockFD, &choice, sizeof(int), 0);
-			goto R;
+		//	goto R;
 		}
 
-		//printf("password: %s\n", password); /*for  checking to password*/
+		//printf("password: %s\n", password); //for  checking to password
 	}
-		/*checking as if password correct or incorrect*/
+		//checking as if password correct or incorrect
 		d >> existPass;
 		//printf("Exist Password: %s\n", existPass);
 
 
 	while(strcmp(password, existPass) != 0)
 	{
-		/*if it wasn't matched, repeat asking until it matched*/
-		i = send(newSockFD, "Enter password: ", strlen("Enter password: "),0);
+		//if it wasn't matched, repeat asking until it matched
+		i = send(sock, "Enter password: ", strlen("Enter password: "),0);
 		if( i < 0)
 			perror("Error entering password");
 		bzero(password, 255);
-		recv(newSockFD, password ,255,0);
+		recv(sock, password ,255,0);
 
 	}
 
 	printf("LOGIN SUCCESSFULLY\n\n");
-	login();
+	Info newClient(username,sock);
+	data.push_back(newClient);
+
+	//cout << data[0].getName() << endl;
+	//cout << data[0].getSockNo() << endl;
+	login(sock,username);
 	
 	
 }
@@ -167,36 +185,36 @@ void User::functServ(int sock)
  
 else if(choice == 3)
 {
-R:
-	/*for register*/
-	send(newSockFD, "Welcome a new register\n", strlen("Welcome a new register\n"),0);
+//R:
+	//for register
+	send(sock, "Welcome a new register\n", strlen("Welcome a new register\n"),0);
 //	if( i < 0)
 //		perror("Error");
-	/*ask for user name and password*/
-	send(newSockFD, "Enter username: ", strlen("Enter username: "),0);
+	//ask for user name and password
+	send(sock, "Enter username: ", strlen("Enter username: "),0);
 //	if( i < 0)
 //		perror("error entering username");
 	bzero(username, 255);
-	recv(newSockFD, username, 255,0); /*recieving username from client*/
+	recv(sock, username, 255,0); //recieving username from client
 
-	/*ask for password*/
-	i = send(newSockFD, "Enter password: ", strlen("Enter password: "),0);
+	//ask for password
+	i = send(sock, "Enter password: ", strlen("Enter password: "),0);
 	if( i < 0)
 		perror("error");
 	bzero(password, 255);
-	recv(newSockFD, password, 255,0);
+	recv(sock, password, 255,0);
 
-	/*append username and password into file*/
+	//append username and password into file
 	ofstream myfile("user.txt",ios_base::app);
 	myfile << username << " " << password << endl;
 
 }
 	
 
-/*if user want to log out*/
+//if user want to log out
 	else if(choice == 2)
 	{
-	close(newSockFD);
+	close(sock);
 	close(sockFD);
 	printf("\nLOG OUT SUCCESSFULLY\n");
 	
@@ -221,49 +239,53 @@ char* User::getUsername()
 }*/
 
 
-void User::login()
+void User::login(int sock, char*name)
 	
 {	
 
 	int choice;
 	int i = 0;
 	/*asking to client to choose a choice*/
-	i = send(newSockFD, "Enter choice:\n1.Subcribed\n2.Unscrubscribed\n3.Send a message to a location\n4.Send a private message\n5.See all the locations you are subscribed to\n6.See all the online users\n7.See last 10 messages\n8.change password\n0.Quit\n", strlen("Enter choice:\n1.Subscribed\n2.Unscribscribed\n3.Send a message to a location\n4.Send a private message\n5.See all the locations you are subdcribed to\n6. See all the online users\n7.See last 10 messages\n8.change password\n0.Quit\n"),0);
+	i = send(sock, "Enter choice:\n1.Subcribed\n2.Unscrubscribed\n3.Send a message to a location\n4.Send a private message\n5.See all the locations you are subscribed to\n6.See all the online users\n7.See last 10 messages\n8.change password\n0.Quit\n", strlen("Enter choice:\n1.Subscribed\n2.Unscribscribed\n3.Send a message to a location\n4.Send a private message\n5.See all the locations you are subdcribed to\n6. See all the online users\n7.See last 10 messages\n8.change password\n0.Quit\n"),0);
 
 	if( i < 0)
 		perror("error");
-	recv(newSockFD, &choice, sizeof(int),0);
+	recv(sock, &choice, sizeof(int),0);
 	printf("Client's choice: %d\n", choice); /*recieved choice*/
 
 
 	if(choice == 1)
 	{
-		Subscribe();
+		Subscribe(sock,name);
+		login(sock,name);
 
 	}
 
 	else if(choice == 2)
 	{
-		unSubscribe();
-		login();
+		unSubscribe(sock,name);
+		login(sock,name);
 	
 	}
 	else if(choice == 3)
 	{
-		communicate();
-		login();
+		communicate(sock,name);
+	//	login(sock);
 	
 	}
 	else if(choice == 5)
 	{
-		printSubList();
-//		login();
+// 		send(sock, "WELCOME CHOICE FIVE", strlen("WELCOM CHOICE FIVE"),0);
+
+		printSubList(sock,name);
+//		print2();
+//		login(sock);
 	}
 
 	else if(choice == 8)
 	{
-		changePassword();
-		login();
+		changePassword(sock);
+		login(sock,name);
 	}
 	
 	
@@ -275,16 +297,16 @@ void User::login()
 
 }
 
-void User::changePassword()
+void User::changePassword(int sock)
 {
 	
-	send(newSockFD, "Enter old password: ", strlen("Enter old password: "),0);/*write question to change password*/
+	send(sock, "Enter old password: ", strlen("Enter old password: "),0);/*write question to change password*/
 	bzero(oldPass, 255);
-	recv(newSockFD, oldPass, strlen(oldPass),0);	/*recieve old password*/
+	recv(sock, oldPass, strlen(oldPass),0);	/*recieve old password*/
 
-	send(newSockFD, "Enter new password: ", strlen("Enter new password: "),0);/*ET newpassword*/
+	send(sock, "Enter new password: ", strlen("Enter new password: "),0);/*ET newpassword*/
 	bzero(newPass, 255);
-	recv(newSockFD, newPass, strlen(newPass),0);	/*reveice new password*/	
+	recv(sock, newPass, strlen(newPass),0);	/*reveice new password*/	
 	PassChangeFunc();
 
 
@@ -331,16 +353,16 @@ void User::PassChangeFunc()
 
 }
 
-void User::Subscribe()
+void User::Subscribe(int sock,char*name)
 {
 
 	int choice;
 	//int n;
 	/*print optioons of location*/
 
-	send(newSockFD,"Enter location:\n1.Pensacola\n2.Milton\n3.Pace\n4.STOP\n", strlen("Enter location:\n1.Pensacola\n2.Milton\n3.Pace\n4.STOP\n"),0);
+	send(sock,"Enter location:\n1.Pensacola\n2.Milton\n3.Pace\n4.STOP\n", strlen("Enter location:\n1.Pensacola\n2.Milton\n3.Pace\n4.STOP\n"),0);
 	bzero(buff,255);
-	recv(newSockFD, &choice, sizeof(choice),0);
+	recv(sock, &choice, sizeof(int),0);
 	printf("client's choice: %d\n", choice);
 
 //	int byteRead, byteWritten = 0;
@@ -350,8 +372,8 @@ void User::Subscribe()
 
 
 		location.push_back("Pensacola");
-		send(newSockFD, "Subscribed to Pensacola\n",strlen("Sunscribed to Pensacola\n"),0);
-		login();
+		send(sock, "Subscribed to Pensacola\n",strlen("Sunscribed to Pensacola\n"),0);
+		login(sock,name);
 
 	}
 
@@ -359,18 +381,18 @@ void User::Subscribe()
 	{
 		
 		location.push_back("Milton");
-		send(newSockFD, "Subscribed to Milton\n", strlen("Subscribed to Milton\n"),0);
+		send(sock, "Subscribed to Milton\n", strlen("Subscribed to Milton\n"),0);
 //		communicate();
-		login();
+		login(sock,name);
 	}
 
 	else if(choice == 3)//pace
 	{
 
 		location.push_back("Pace");
-		send(newSockFD, "Subscribed to Pace\n", strlen("Subscribed to Pace\n"),0);
+		send(sock, "Subscribed to Pace\n", strlen("Subscribed to Pace\n"),0);
 //		communicate();
-		login();
+		login(sock,name);
 
 	}
 
@@ -378,98 +400,140 @@ void User::Subscribe()
 }
 
 
-void User::communicate()
+void User::communicate(int sock, char* name)
 {
 	int choice;
-	print2();
-	send(newSockFD, "Enter Choice: \n",strlen("Enter Choice: \n"), 0);
+	//char buff[256];
+	print2(); /*print subscribed location*/
+	send(sock, "Enter Choice: \n",strlen("Enter Choice: \n"), 0);
+	
 	bzero(buff,255);
-	recv(newSockFD, &choice, sizeof(choice), 0); 
+	recv(sock, &choice, sizeof(int), 0); 
+	
 	string locateName;
 	locateName = location.at(choice);
-	LocationChoose(locateName);
+	LocationChoose(locateName,sock,name);
 
 }
 
-void User::LocationChoose(string l)
+void User::LocationChoose(string l,int sock, char*name)
 {
 	if( l == "Pensacola")
 	{
-		SendMssg();
+		SendMssg(sock,name);
 	}
 	else if(l == "Milton")
 	{
-		SendMssg();
+		SendMssg(sock,name);
 	}
 	else if(l == "Pace")
 	{
-		SendMssg();
+		SendMssg(sock,name);
 	}
 
 }
-void User::SendMssg()
+void User::SendMssg(int sock,char* name)
 {
-	while(1)
-	{
-		send(newSockFD, "Enter: ", strlen("Enter: "),0);
-		bzero(buff, 256);
-		recv(newSockFD, buff, 255, 0);
-		printf("%s: %s\n", username, buff);
+//	while(1)
+//	{
+	send(sock, "Enter Mssg: ", strlen("Enter Mssg: "),0);
+	bzero(buff, 256);
 
-		int i = strncmp("Exit", buff, 4);
-		if(i == 0)
-			break;
+	int len;
+	while(( len = recv(sock, buff, 255, 0)) > 0 ){	// recieve from one socket
+
+		//char tempName[255];
+		//for(int i =0; i < 3; i++)
+		//{
+
+		//if(username == data[i].getName()){
+		//printf("%s: %s\n", name, buff);
+		printf("%s\n",buff);
+		//}
+	//	}
+		
+		buff[len] = '\0';
+		SendToAll(buff, sock);
+		//memset(buff,'\0',sizeof(buff);
+		bzero(buff,256);
+
+		//int i = strncmp("Exit", buff, 4);
+		//if(i == 0)
+		//
+		//	break;
+		//}
 
 	}
-	close(newSockFD);
-	close(sockFD);
+//	close(newSockFD);
+//	close(sock);
+//	login(sock);
 
 }
-void User::unSubscribe()
+
+void User::SendToAll(char *mssg, int sock)
+{
+
+	for(int i = 0; i < 2; i++)
+	{
+		cout << "socket No: " << data[i].getSockNo() <<endl;
+	}
+
+	for(int i = 0; i < 2; i++)
+	{
+		if(data[i].getSockNo() != sock)
+		{
+			/*check if they subscribe in the same location*/
+	//		if(data[i].getLocation() == location.at(i))
+	//		{
+
+			int newSock;
+			newSock = data[i].getSockNo();		
+			send(newSock, mssg, strlen(mssg),0);
+	//		}
+
+		}
+
+
+	}
+
+
+}
+void User::unSubscribe(int sock,char*name)
 {
 
 	int choice;
 
 	/*print option of location*/
-	send(newSockFD, "Enter location to unsubscribe\n1.Pensacola\n2.Milton\3.Milton\n", strlen("Enter location to unsubscribe\n1.Pensacola\n2.Milton\3.Pace\n"), 0);
+	send(sock, "Enter location to unsubscribe\n1.Pensacola\n2.Milton\3.Milton\n", strlen("Enter location to unsubscribe\n1.Pensacola\n2.Milton\3.Pace\n"), 0);
 	bzero(buff,255);
-	recv(newSockFD, &choice, sizeof(choice),0);
+	recv(sock, &choice, sizeof(choice),0);
 	printf("Client's choice: %d", choice);
 
 	if(choice == 1)
 	{
 		/*deleate*/
-		send(newSockFD, "Unsubscribed: Pensacola", strlen("Unsubscribed: Pensacola"), 0);
+		send(sock, "Unsubscribed: Pensacola", strlen("Unsubscribed: Pensacola"), 0);
 	}
 
 	else if(choice == 2)
 	{
-		send(newSockFD, "Unsubscribed: Milton", strlen("Unsubscribed: MIlton"),0);
+		send(sock, "Unsubscribed: Milton", strlen("Unsubscribed: MIlton"),0);
 
 	}
 
 	else if(choice == 3)
 	{
-		send(newSockFD, "Unsubscribed: Pace", strlen("Unsubscribed: Pace"),0);
+		send(sock, "Unsubscribed: Pace", strlen("Unsubscribed: Pace"),0);
 
 	}
+
+	login(sock,name);
 
 
 }
 
 
-void User::printSubList()
-{
-	int s;
-	s = location.size();
-	for(int i = 0; i < s; i++)
-	{
-		cout << location.at(i) << endl;
-	}
 
-	
-	login();
-}
 
 void User::print2()
 {
@@ -479,5 +543,12 @@ void User::print2()
 	{
 		cout << location.at(i) << endl;
 	}
+}
+
+void User::printSubList(int sock,char*name)
+{	
+	print2();
+	login(sock,name);
+
 }
 

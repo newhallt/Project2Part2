@@ -21,8 +21,8 @@ class TCPClient
 	public:
 		void createSocket(char* host); /*for creating socket*/
 		void connectSocket(int PortNo); /*connecting socket*/
-		void SendClient(); /*send to client*/
-		void login(); /*for login function*/
+		void SendClient(int sock); /*send to client*/
+		void login(int sock); /*for login function*/
 
 
 		char password[255];
@@ -31,18 +31,20 @@ class TCPClient
 		char existPass[255];
 		char buff[255];
 
-		void changePassword(); /*change password function*/
-		void Subscribe(); /*subscribe function*/
-		void unSubscribe(); /*unsubscribe function*/
-		void communicate();
-		void printSub();
-		void SendMssg();
-		void LocationChoose(string l);
+		void changePassword(int sock); /*change password function*/
+		void Subscribe(int sock); /*subscribe function*/
+		void unSubscribe(int sock); /*unsubscribe function*/
+		void communicate(int sock);
+		void printSub(int sock);
+		void SendMssg(int sock);
+		void LocationChoose(string l,int sock);
 		void print2();
 
 		vector<string> location;
 
 
+		void test(int sock);
+		void checkMssg(int sock);
 	private:
 		int sockFD, PortNo; 
 		struct sockaddr_in serv_addr;
